@@ -1,0 +1,45 @@
+import React from react
+import { signal } from @preact/signals-react
+import Login from ./views/Login.civet
+import Register from ./views/Register.civet
+import Home from ./views/Home.civet
+import Comments from ./views/Comments.civet
+import * as api from ./api
+
+
+export enum View
+  HOME
+  REGISTER
+  LOGIN
+  COMMENTS
+
+
+export url := signal<string|null> null
+export view := signal<View> View.HOME
+export me := signal<api.Me|null> null
+
+
+export async function getme()
+  me.value = (await api.me()).ok or null
+
+
+export async function geturl()
+  url.value = (
+    await chrome.tabs.query(active: true, lastFocusedWindow: true)
+  )[0]?.url or null
+
+
+getme()
+geturl()
+
+
+export default function App()
+  switch view.value
+    case View.HOME
+      return <Home />
+    case View.LOGIN
+      return <Login />
+    case View.REGISTER
+      return <Register />
+    case View.COMMENTS
+      return <Comments />

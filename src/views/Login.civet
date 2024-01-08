@@ -1,0 +1,159 @@
+import React, { Ref, useRef } from react
+import {
+  Alert
+  Button
+  IconButton
+  InputAdornment
+  Snackbar
+  Stack
+  TextField
+} from @mui/material
+import { Signal, useSignal } from @preact/signals-react
+import { Visibility, VisibilityOff } from @mui/icons-material
+import { View, view, getme } from ../App.civet
+import * as api from ../api
+
+USERNAME_REGEX := /^[a-zA-Z][a-zA-Z0-9\-_]{3,128}$/
+
+
+export function getUsernameError(username: string)
+  if not username
+    return null
+  if username.length < 4
+    return "Username is too short!"
+  if username.length > 128
+    return "Username is too long!"
+  if not USERNAME_REGEX.test username
+    return "Username is invalid!"
+  return null
+
+
+export function getPasswordError(password: string)
+  if not password
+    return null
+  if password.length < 8
+    return "Password is too short!"
+  return null
+
+
+export function UsernameInput({
+  rf
+  username
+  usernameError
+}: {
+  rf: Ref<HTMLInputElement | null>
+  username: Signal<string>
+  usernameError: string | null
+})
+  <TextField
+    inputRef={rf}
+    label="Username"
+    variant="outlined"
+    helperText=usernameError
+    error=Boolean(usernameError)
+    {username.value}
+    onChange={(ev) =>
+      username.value = ev.target.value
+    }
+  />
+
+
+export function PasswordInput({
+  rf
+  password
+  passwordError
+  label="Password"
+}: {
+  rf: Ref<HTMLInputElement | null>
+  password: Signal<string>
+  passwordError: string | null
+  label?: string
+})
+  visible := useSignal false
+
+  <TextField
+    inputRef=rf
+    {label}
+    variant="outlined"
+    type={if visible.value then "text" else "password"}
+    helperText=passwordError
+    error=Boolean(passwordError)
+    {password.value}
+    onChange={(ev) =>
+      password.value = ev.target.value
+    }
+    InputProps={
+      endAdornment:
+        <InputAdornment position="end">
+          <IconButton
+            onClick={() =>
+              visible.value = not visible.value
+            }
+            edge="end"
+          >
+            {if visible.value then <Visibility /> else <VisibilityOff />}
+          </IconButton>
+        </InputAdornment>
+    }
+  />
+
+
+export default function Login()
+  username := useSignal ""
+  usernameError := getUsernameError username.value
+  usernameRef := useRef<HTMLInputElement|null> null
+  password := useSignal ""
+  passwordError := getPasswordError password.value
+  passwordRef := useRef<HTMLInputElement|null> null
+  failed := useSignal false
+
+  async function onLogin()
+    if not username.value or usernameError
+      usernameRef.current?.focus()
+      return
+    if not password.value or passwordError
+      passwordRef.current?.focus()
+      return
+    success := await api.login(username.value, password.value)
+    if success.ok?
+      if success.ok
+        getme()
+        view.value = View.HOME
+      else
+        failed.value = true
+    else
+      throw success.err
+
+  <Stack padding=2 spacing=2>
+    <UsernameInput
+      rf=usernameRef
+      {username}
+      {usernameError}
+    />
+    <PasswordInput
+      rf=passwordRef
+      {password}
+      {passwordError}
+    />
+    <Stack direction="row" spacing=2>
+      <Button variant="contained" onClick=onLogin>
+        Login
+      </Button>
+      <Button
+        onClick={() =>
+          view.value = View.REGISTER
+        }
+      >
+        Register
+      </Button>
+    </Stack>
+    <Snackbar
+      open=failed.value
+      autoHideDuration=2000
+      onClose={() =>
+        failed.value = false
+      }
+    >
+      <Alert severity="error">Invalid credentials!</Alert>
+    </Snackbar>
+  </Stack>

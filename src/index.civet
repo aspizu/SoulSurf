@@ -1,0 +1,23 @@
+import React from react
+import { createRoot } from react-dom/client
+import { StrictMode } from react
+import App from ./App.civet
+import { CssBaseline, ThemeProvider, createTheme } from @mui/material
+
+theme := createTheme
+  palette:
+    mode: "dark"
+  components:
+    MuiStack:
+      defaultProps:
+        useFlexGap: true
+
+
+root := createRoot document.getElementById("app")!
+root.render
+  <StrictMode>
+    <ThemeProvider {theme}>
+      <CssBaseline />
+      <App />
+    </ThemeProvider>
+  </StrictMode>

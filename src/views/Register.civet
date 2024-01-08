@@ -1,0 +1,89 @@
+import React, { useRef } from react
+import { useSignal } from @preact/signals-react
+import {
+  PasswordInput
+  UsernameInput
+  getPasswordError
+  getUsernameError
+} from ./Login.civet
+import * as api from ../api
+import { View, view } from ../App.civet
+import { Alert, Button, Snackbar, Stack } from @mui/material
+
+function getPasswordAgainError(password: string, passwordAgain: string)
+  if password and passwordAgain and password != passwordAgain
+    return "Passwords don't match!"
+  return null
+
+
+export default function Register()
+  username := useSignal ""
+  usernameError := getUsernameError username.value
+  usernameRef := useRef<HTMLInputElement|null> null
+  password := useSignal ""
+  passwordError := getPasswordError password.value
+  passwordRef := useRef<HTMLInputElement|null> null
+  passwordAgain := useSignal ""
+  passwordAgainError := getPasswordAgainError(
+    password.value, passwordAgain.value
+  )
+  passwordAgainRef := useRef<HTMLInputElement|null> null
+  failed := useSignal false
+
+  async function onRegister()
+    if not username.value or usernameError
+      usernameRef.current?.focus()
+      return
+    if not password.value or passwordError
+      passwordRef.current?.focus()
+      return
+    if not passwordAgain.value or passwordAgainError
+      passwordAgainRef.current?.focus()
+      return
+    success := await api.register(username.value, password.value)
+    if success.ok?
+      if success.ok
+        view.value = View.HOME
+      else
+        failed.value = true
+    else
+      throw success.err
+  <Stack padding=2 spacing=2>
+    <UsernameInput
+      rf=usernameRef
+      {username}
+      {usernameError}
+    />
+    <PasswordInput
+      rf=passwordRef
+      {password}
+      {passwordError}
+    />
+    <PasswordInput
+      rf=passwordAgainRef
+      label="Password again"
+      password=passwordAgain
+      passwordError=passwordAgainError
+    />
+    <Stack direction="row" spacing=2>
+      <Button variant="contained" onClick=onRegister>
+        Register
+      </Button>
+      <Button
+        onClick={() =>
+          view.value = View.LOGIN
+        }
+      >
+        Login
+      </Button>
+    </Stack>
+    <Snackbar
+      open=failed.value
+      autoHideDuration=2000
+      onClose={() =>
+        failed.value = false
+      }
+    >
+      <Alert severity="error">Username already taken!</Alert>
+    </Snackbar>
+  </Stack>

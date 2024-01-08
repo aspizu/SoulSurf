@@ -1,0 +1,83 @@
+import React, { Ref, useRef } from react
+import {
+  Alert
+  Button
+  IconButton
+  InputAdornment
+  Snackbar
+  Stack
+  TextField
+  Paper
+  Fab
+  Typography
+} from @mui/material
+import Comment from ../components/Comment.civet
+import { useSignalEffect, Signal, useSignal } from @preact/signals-react
+import AddIcon from @mui/icons-material/Add
+import { View, view, getme, url, me } from ../App.civet
+import CodeMirror from @uiw/react-codemirror
+import { markdown, markdownLanguage } from @codemirror/lang-markdown
+import { languages } from @codemirror/language-data
+import { tokyoNight } from @uiw/codemirror-theme-tokyo-night
+import * as api from ../api
+
+
+function NoBoxExists({getBox}:{getBox: () => void})
+  async function onAddBox()
+    return if not url.value
+    created := await api.create_box(url.value)
+    if created.ok
+      getBox()
+  <Stack
+    padding=2
+    spacing=2
+    sx={height: "100%"}
+    justifyContent="center"
+    alignItems="center">
+    <Typography textAlign="center">
+      {if me.value
+      then "This page has no comment box, try to create one?"
+      else "This page has no comment box. Log in to create one."}
+    </Typography>
+    {if me.value then <Fab color="primary" onClick=onAddBox><AddIcon/></Fab>}
+  </Stack>
+
+
+function BoxExists({getBox,box}:{getBox: () => void, box: api.Box})
+  comment := useSignal<string> ""
+  async function onPost()
+    return if not comment.value
+    await api.create_comment(box.id, comment.value)
+    comment.value = ""
+    getBox()
+  <Stack padding=2 spacing=2 sx={maxHeight: "100%"}>
+    <Stack spacing=2 sx={overflowY: "scroll"}>
+      {box.comments.map (comment) =>
+        <Comment {comment} />}
+    </Stack>
+    {if me.value then
+    <Paper>
+      <CodeMirror
+        {comment.value}
+        theme=tokyoNight
+        extensions=[markdown(base: markdownLanguage, codeLanguages: languages)]
+        onChange={(value) => comment.value = value} />
+    </Paper>
+    <Button
+      variant="contained"
+      onClick=onPost
+      disabled=!comment.value>POST</Button>}
+  </Stack>
+
+
+export default function Comments()
+  box := useSignal<api.Box|null> null
+  async function getBox()
+    return if not url.value
+    box.value = (await api.box(url.value)).ok or null;
+  useSignalEffect () => getBox();
+  
+  if box.value
+    <BoxExists box=box.value {getBox} />
+  else
+    <NoBoxExists {getBox} />

@@ -1,0 +1,26 @@
+import React, { Ref, useRef } from react
+import {
+  Alert
+  Button
+  IconButton
+  InputAdornment
+  Snackbar
+  Stack
+  TextField
+  Paper
+  Fab
+  Typography
+} from @mui/material
+import { useSignalEffect, Signal, useSignal } from @preact/signals-react
+import { View, view, getme, url, me } from ../App.civet
+import * as api from ../api
+import Markdown from react-markdown
+
+
+export default function Comment({comment}:{comment: api.Comment})
+  <Paper>
+    <Stack padding={1}>
+      <Typography variant="overline">{comment.author.username}</Typography>
+      <Markdown>{comment.content}</Markdown>
+    </Stack>
+  </Paper>
