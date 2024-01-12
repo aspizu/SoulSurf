@@ -1,5 +1,7 @@
 # Soul Surf
 
+![](./icon.svg)
+
 Soul Surf is a chrome extension which lets you post comments on any website.
 
 ![](https://media.discordapp.net/attachments/913218132368306216/1193732731616632882/image.png)
